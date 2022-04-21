@@ -56,6 +56,20 @@ def parse_msg_hide(string):
 
     return string.strip() == "채팅방 관리자가 메시지를 가렸습니다."
 
+def change_time(string):
+    AM = "오전"
+    PM = "오후"
+    meridiem, hour, minute = re.findall('^(오후|오전) ([0-9]+):([0-9]+)$', string)[0]
+    hour, minute = int(hour), int(minute)
+
+    if meridiem == PM and not hour==12:
+        hour += 12
+
+    if meridiem == AM and hour==12:
+        hour -= 12
+
+    return hour, minute
+
 def kt_parser():
     '''
     여기서 카카오가 내보낸 txt 파일 한 줄 한 줄씩 검사
@@ -63,7 +77,7 @@ def kt_parser():
     \n 문자 지우고 한 문잘로 만드는 역할을 여기서 함
     '''
     line = yield
-
+    curr_date : datetime = None
     mem = None
     msg = None
 
@@ -71,7 +85,8 @@ def kt_parser():
     rest = None
     while (line):
         if parsed := parse_date(line):
-            line = yield KTDateTime(line, datetime(*[int(x) for x in parsed[0][0:3]]))
+            curr_date = KTDateTime(line, datetime(*[int(x) for x in parsed[0][0:3]]))
+            line = yield curr_date
             sep = 1
             continue
         elif parsed := parse_in(line):
@@ -99,7 +114,11 @@ def kt_parser():
             parsed = parsed[0]
             
             mem = KTRoomMember(parsed[0])
-            msg = KTMessage(mem, parsed[1], parsed[2])
+            hour, minute = change_time(parsed[1])
+            dd = curr_date.date
+            ttime = datetime(dd.year, dd.month, dd.day, hour, minute)
+            msg = KTMessage(sender= mem, time = ttime, message=parsed[2])
+
             if not rest == msg:
                 line = yield msg
                 sep = 0
