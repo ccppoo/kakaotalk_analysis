@@ -1,8 +1,13 @@
 import re
-from .consts import *
 from datetime import datetime
+from .consts import *
 from .message import *
 from .events import *
+from .member import *
+
+__all__ = [
+    "kt_parser"
+]
 
 def parse_msg(string):
     '''
@@ -14,7 +19,6 @@ def parse_date(string):
     '''
     날짜 파싱
     '''
-    
     return re.findall('^-* ([0-9]+)년 ([0-9]+)월 ([0-9]+)일 (.*) -*$', string)
 
 def parse_in(string):
@@ -64,35 +68,35 @@ def kt_parser():
     sep = 0
     rest = None
     while (line):
-        if a := parse_date(line):
-            line = yield KTDateTime(line, datetime(*[int(x) for x in a[0][0:3]]))
+        if parsed := parse_date(line):
+            line = yield KTDateTime(line, datetime(*[int(x) for x in parsed[0][0:3]]))
             sep = 1
             continue
-        elif b := parse_in(line):
-            line = yield KTRoomJoin(line, b[0])
+        elif parsed := parse_in(line):
+            line = yield KTRoomJoin(line, parsed[0])
             sep = 1
             continue
-        elif c := parse_out(line):
-            line = yield KTRoomOUT(line, c[0])
+        elif parsed := parse_out(line):
+            line = yield KTRoomOUT(line, parsed[0])
             sep = 1
             continue
-        elif e := parse_kick(line):
-            line = yield  KTRoomKick(line, e[0])
+        elif parsed := parse_kick(line):
+            line = yield  KTRoomKick(line, parsed[0])
             sep = 1
             continue
-        elif f := parse_infomsg(line):
+        elif parsed := parse_infomsg(line):
             line = yield KTSystemMessage(line)
             # 새로 들어오면 나오는 시스템 메세지는 2개의 줄로 들어와서 그냥 스킵 
             line = yield 
             sep = 1
             continue
-        elif g := parse_msg_hide(line):
+        elif parsed := parse_msg_hide(line):
             line = yield KTMessageHide("time temp")
             continue
-        elif d := parse_msg(line):
-            d = d[0]
-            mem = KTRoomMember(d[0])
-            msg = KTMessage(mem, d[1], d[2])
+        elif parsed := parse_msg(line):
+            parsed = parsed[0]
+            mem = KTRoomMember(parsed[0])
+            msg = KTMessage(mem, parsed[1], parsed[2])
             if not rest == msg:
                 line = yield msg
                 sep = 0
@@ -109,5 +113,7 @@ def kt_parser():
         if sep:
             line = yield rest
             sep = 0
+
     if msg:
+        # 마지막에 남은 메세지 내보내기
         yield msg

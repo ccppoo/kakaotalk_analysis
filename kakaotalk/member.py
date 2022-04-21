@@ -1,5 +1,9 @@
 from dataclasses import dataclass
 
+__all__ = [
+    "KTRoomMember"
+]
+
 @dataclass
 class KTRoomMember:
     name : str

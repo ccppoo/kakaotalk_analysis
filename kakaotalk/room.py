@@ -3,9 +3,9 @@ from typing import List, IO
 from .member import *
 import re
 
-def intro(string):
-    
-    return re.findall('.*? 님과 카카오톡 대화', string)
+__all__ = [
+    "KTChatRoom"
+]
 
 @dataclass
 class KTChatRoom:

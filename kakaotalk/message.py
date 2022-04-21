@@ -2,6 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from .member import *
 
+__all__ = [
+    "KTMessage"
+]
 
 @dataclass
 class KTMessage:
