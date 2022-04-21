@@ -1,5 +1,5 @@
 # sample files
-*.txt
+samples/*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
