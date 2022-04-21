@@ -1,6 +1,7 @@
+from typing import List
 from kakaotalk import *
 
-KakaoTalk_TXT = "talk2.txt"
+KakaoTalk_TXT = "samples/talk4.txt"
 
 def main():
     cc = kt_parser()
@@ -9,19 +10,19 @@ def main():
     messages  = 0
     datecount = 0
     room = None
-    realmsg = 0
     outcount = 0
     joincount = 0
     kickcount=0
     sysmsgcount= 0
     msghide = 0
+    messages_list: List[KTMessage] = []
     with open(KakaoTalk_TXT,encoding="utf-8", mode="r") as fp:    
         room = KTChatRoom(fp)
-        k = 0
+
         for line in fp.readlines():
             if item := cc.send(line):
                 if isinstance(item, KTMessage):
-                    realmsg += 1
+                    messages_list.append(item)
                     messages += 1
                 if isinstance(item, KTDateTime):
                     datecount += 1
@@ -35,8 +36,9 @@ def main():
                     sysmsgcount += 1
                 if isinstance(item, KTMessageHide):
                     msghide += 1
+                if messages_list and isinstance(item, str):
+                    messages_list[-1].concat(item)
 
-    print(f'{realmsg=}')
     print(f"{messages=}")
     print(f"{datecount=}")
     print(f"{outcount=}")
