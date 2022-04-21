@@ -13,6 +13,8 @@ def parse_msg(string):
     '''
     메세지 파싱
     '''
+    # return re.findall('^\[(.*)\]\s\[(오후|오전 [0-9]+:[0-9]+)\]\s(.*)[^\n]+$', string)
+    return re.findall('^\[(.*)\]\s\[((?:오후|오전) [0-9]+:[0-9]+)\]\s(.*)$', string)
     return re.findall('\[(.*)\]\s\[(.*)\]\s(.*)', string)
 
 def parse_date(string):
@@ -95,6 +97,7 @@ def kt_parser():
             continue
         elif parsed := parse_msg(line):
             parsed = parsed[0]
+            
             mem = KTRoomMember(parsed[0])
             msg = KTMessage(mem, parsed[1], parsed[2])
             if not rest == msg:
@@ -105,7 +108,8 @@ def kt_parser():
                 sep = 1
         else:
             if rest:
-                rest.concat(line)
+                # parse_msg 에서 regex 마지막 메세지 찾는 것중에 (.*)여기에 \n 포함이 안되어서 추가
+                rest.concat(f"\n{line.strip()}")
                 line = yield
                 continue
             line = yield
@@ -116,4 +120,4 @@ def kt_parser():
 
     if msg:
         # 마지막에 남은 메세지 내보내기
-        yield msg
+        yield rest
