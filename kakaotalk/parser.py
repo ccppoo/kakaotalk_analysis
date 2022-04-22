@@ -13,9 +13,7 @@ def parse_msg(string):
     '''
     메세지 파싱
     '''
-    # return re.findall('^\[(.*)\]\s\[(오후|오전 [0-9]+:[0-9]+)\]\s(.*)[^\n]+$', string)
     return re.findall('^\[(.*)\]\s\[((?:오후|오전) [0-9]+:[0-9]+)\]\s(.*)$', string)
-    return re.findall('\[(.*)\]\s\[(.*)\]\s(.*)', string)
 
 def parse_date(string):
     '''
@@ -70,6 +68,20 @@ def change_time(string):
 
     return hour, minute
 
+def is_photo(string):
+    # 사진 2장
+    # 사진 1장인 경우 "사진"만 있어서 원본 메세지에 1로 넣어줌 
+    # 사진의 경우 메세지 원본은 사진 [ ]장 할 때 장수만 불러옴
+    if temp1 := re.findall('^(사진)*\s*([0-9]+)*장$', string):
+        return temp1[0]
+    if temp2 := re.findall('^(사진)$', string):
+        return temp2 + [1]
+
+def is_emoticon(string):
+    # "이모티콘" 이렇게 텍스트로 남음, 메타데이터는 X
+    # 이모티콘의 경우 메세지 원본은 "이모티콘" 그대로 냅둠
+    return re.findall('^(이모티콘)$', string)
+
 def kt_parser():
     '''
     여기서 카카오가 내보낸 txt 파일 한 줄 한 줄씩 검사
@@ -117,7 +129,21 @@ def kt_parser():
             hour, minute = change_time(parsed[1])
             dd = curr_date.date
             ttime = datetime(dd.year, dd.month, dd.day, hour, minute)
-            msg = KTMessage(sender= mem, time = ttime, message=parsed[2])
+
+            # TODO : 텍스트로 남은 다른 것들 (사진, 이모티콘) 깔끔한 메서드로 만들기
+            isThisPhoto = is_photo(parsed[2])
+            isThisEmoticon = is_emoticon(parsed[2])
+
+            messageParsed = ""
+
+            if isThisPhoto:
+                messageParsed = isThisPhoto[1]
+            elif isThisEmoticon:
+                messageParsed = parsed[2]
+            else:
+                messageParsed = parsed[2]
+
+            msg = KTMessage(sender= mem, time = ttime, message=f"{messageParsed!r}", isPhoto= bool(isThisPhoto), isEmoticon= bool(isThisEmoticon))
 
             if not rest == msg:
                 line = yield msg
@@ -128,7 +154,8 @@ def kt_parser():
         else:
             if rest:
                 # parse_msg 에서 regex 마지막 메세지 찾는 것중에 (.*)여기에 \n 포함이 안되어서 추가
-                rest.concat(f"\n{line.strip()}")
+                ttemp = "\n" + line.strip()
+                rest._concat(f"{ttemp!r}")
                 line = yield
                 continue
             line = yield
