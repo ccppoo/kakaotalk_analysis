@@ -29,17 +29,19 @@ class Talks:
                 if isinstance(item, KTMessage):
                     self.messages.append(item)
                     self.members.add(item.sender)
-                if isinstance(item, KTDateTime):
+                elif isinstance(item, KTDateTime):
                     self.dates.append(item.date)
-                if isinstance(item, KTRoomOUT):
+                elif isinstance(item, KTRoomOUT):
                     pass
-                if isinstance(item, KTRoomJoin):
+                elif isinstance(item, KTRoomJoin):
                     pass
-                if isinstance(item, KTRoomKick):
+                elif isinstance(item, KTRoomKick):
                     pass
-                if isinstance(item, KTSystemMessage):
+                elif isinstance(item, KTSystemMessage):
                     pass
-                if isinstance(item, KTMessageHide):
+                elif isinstance(item, KTMessageHide):
                     pass
-                if self.messages and isinstance(item, str):
-                    self.messages[-1].concat(item)
+                elif self.messages and isinstance(item, str):
+                    self.messages[-1]._concat(item)
+                else:
+                    assert item == None
