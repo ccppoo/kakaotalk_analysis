@@ -1,20 +1,39 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 from .member import *
 
 __all__ = [
-    "KTMessage"
+    "KTMessage",
+    "KTMessageType"
 ]
+
+class KTMessageType(Enum):
+    message = "message"
+    photo = "photo"
+    emoticon = "emoticon"
 
 @dataclass
 class KTMessage:
     sender : KTRoomMember
-    time : str = None
-    message : str = None
+    time : datetime
+    message : str
+    isPhoto : bool
+    isEmoticon : bool
 
-    def concat(self, string : str) -> KTMessage:
+    def _concat(self, string : str) -> KTMessage:
         self.message += string
         return self
+
+    @property
+    def type(self) -> str:
+        if self.isPhoto:
+            return KTMessageType.photo.value
+        elif self.isEmoticon:
+            return KTMessageType.emoticon.value
+        else:
+            return KTMessageType.message.value
 
     def __hash__(self) -> int:
         return hash((self.sender, self.time, self.message))
