@@ -2,13 +2,19 @@ from typing import List
 from kakaotalk import *
 import kakaotalk
 
-KakaoTalk_TXT = "samples/talk4.txt"
+
+num = 5
+KakaoTalk_TXT = f"samples/talk{num}.txt"
+
+csv_temp = f"talk{num}.csv"
+
+def makefield():
+    
+    pass
 
 def main():
     with open(KakaoTalk_TXT, encoding='utf-8', mode='r') as fp:
         talks = kakaotalk.Talks(fp=fp)
-
-    print(len(talks.messages))
 
     import csv
 

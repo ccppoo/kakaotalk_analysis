@@ -7,13 +7,13 @@ from kakaotalk.message import *
 from kakaotalk.parser import *
 from kakaotalk.room import *
 
-
 @dataclass
 class Talks:
 
     members : Set[KTRoomMember] = None
     messages : List[KTMessage] = None
     dates : List[datetime] = None
+    room : KTChatRoom = None
 
     def __init__(self, fp: IO) -> None:
         room = KTChatRoom(fp)
@@ -45,3 +45,13 @@ class Talks:
                     self.messages[-1]._concat(item)
                 else:
                     assert item == None
+    
+    def __len__(self ) -> int:
+        return len(self.messages)
+
+    def __repr__(self) -> str:
+        return f"<class <kakaotalk.Talks> name={self.room.room_name} saved_at={self.room.saved_at} messages={len(self.messages)}>"
+
+    @property
+    def messages(self, ) -> List[KTMessage]:
+        return self.messages

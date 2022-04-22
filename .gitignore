@@ -1,6 +1,12 @@
 # sample files
 samples/*.txt
 
+# file outputs
+*.csv
+
+# tablue files
+*.twb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
