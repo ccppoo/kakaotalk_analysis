@@ -1,12 +1,11 @@
 import re
 from datetime import datetime
 from .consts import *
-from .message import *
 from .events import *
 from .member import *
 
 __all__ = [
-    "kt_parser"
+    "KTParser"
 ]
 
 def parse_msg(string):
@@ -27,21 +26,25 @@ def parse_in(string):
 
     본인이 들어온 경우
     "운영정책을 위반한 메시지로 신고 접수 시 카카오톡 이용에 제한이 있을 수 있습니다."
-    이 메세지 추가됨 
+    이 메세지 추가됨
+
+    ((?!\[.*\]))는 가짜로 메세지(시스템 메세지 흉내내는) 거르는 용도
     '''
-    return re.findall('(.*)님이 들어왔습니다.$', string)
+    return re.findall('^((?!\[.*\]))(.*)님이 들어왔습니다.$', string)
 
 def parse_out(string):
     '''
     나간 사람 파싱
+    ((?!\[.*\]))는 가짜로 메세지(시스템 메세지 흉내내는) 거르는 용도
     '''
-    return re.findall('(.*)님이 나갔습니다.$', string)
+    return re.findall('^((?!\[.*\]))(.*)님이 나갔습니다.$', string)
 
 def parse_kick(string):
     '''
     내보낸 사람 파싱
+    ((?!\[.*\]))는 가짜로 메세지(시스템 메세지 흉내내는) 거르는 용도
     '''
-    return re.findall('(.*)님을 내보냈습니다.$', string)
+    return re.findall('^((?!\[.*\]))(.*)님을 내보냈습니다.$', string)
 
 def parse_infomsg(string):
     '''
@@ -82,7 +85,7 @@ def is_emoticon(string):
     # 이모티콘의 경우 메세지 원본은 "이모티콘" 그대로 냅둠
     return re.findall('^(이모티콘)$', string)
 
-def kt_parser():
+def KTParser():
     '''
     여기서 카카오가 내보낸 txt 파일 한 줄 한 줄씩 검사
     \n이 있는 경우 줄이 쪼개진채로 오기 때문에 한 문장이 안됨
@@ -97,38 +100,39 @@ def kt_parser():
     rest = None
     while (line):
         if parsed := parse_date(line):
-            curr_date = KTDateTime(line, datetime(*[int(x) for x in parsed[0][0:3]]))
-            line = yield curr_date
+            ktdatetime = KTDateTime(line.strip(), datetime(*[int(x) for x in parsed[0][0:3]]))
+            line = yield ktdatetime
+            curr_date = ktdatetime._time
             sep = 1
             continue
         elif parsed := parse_in(line):
-            line = yield KTRoomJoin(line, parsed[0])
+            
+            line = yield KTRoomJoin(line.strip(), parsed[0][1], curr_date)
             sep = 1
             continue
         elif parsed := parse_out(line):
-            line = yield KTRoomOUT(line, parsed[0])
+            # print(parsed[0])
+            line = yield KTRoomOUT(line.strip(), parsed[0][1], curr_date)
             sep = 1
             continue
         elif parsed := parse_kick(line):
-            line = yield  KTRoomKick(line, parsed[0])
+            line = yield  KTRoomKick(line.strip(), parsed[0][1], curr_date)
             sep = 1
             continue
         elif parsed := parse_infomsg(line):
-            line = yield KTSystemMessage(line)
+            line = yield KTSystemMessage(line.strip(), curr_date)
             # 새로 들어오면 나오는 시스템 메세지는 2개의 줄로 들어와서 그냥 스킵 
             line = yield 
             sep = 1
             continue
         elif parsed := parse_msg_hide(line):
-            line = yield KTMessageHide("time temp")
+            line = yield KTMessageHide(curr_date)
             continue
         elif parsed := parse_msg(line):
             parsed = parsed[0]
-            
             mem = KTRoomMember(parsed[0])
             hour, minute = change_time(parsed[1])
-            dd = curr_date.date
-            ttime = datetime(dd.year, dd.month, dd.day, hour, minute)
+            ttime = datetime(curr_date.year, curr_date.month, curr_date.day, hour, minute)
 
             # TODO : 텍스트로 남은 다른 것들 (사진, 이모티콘) 깔끔한 메서드로 만들기
             isThisPhoto = is_photo(parsed[2])
@@ -143,7 +147,9 @@ def kt_parser():
             else:
                 messageParsed = parsed[2]
 
-            msg = KTMessage(sender= mem, time = ttime, message=f"{messageParsed!r}", isPhoto= bool(isThisPhoto), isEmoticon= bool(isThisEmoticon))
+            msgType = KTMessageType._is(isThisPhoto, isThisEmoticon)
+
+            msg = KTMessage(sender= mem, time = ttime, message=f"{messageParsed!r}", type=msgType)
 
             if not rest == msg:
                 line = yield msg

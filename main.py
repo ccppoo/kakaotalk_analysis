@@ -1,38 +1,68 @@
-from typing import List
+from os import PathLike
 from kakaotalk import *
 import kakaotalk
+import csv
 
+KakaoTalk_TXT = "<PATH TO KakaoTalk txt file>"
 
-num = 5
-KakaoTalk_TXT = f"samples/talk{num}.txt"
+all_event_parsed = "kakaotalk_events.csv"
+Join_Out_Kick_event_parsed = "join_out_kick_events.csv"
+message_pasred = "talk_parsed.csv"
 
-csv_temp = f"talk{num}.csv"
+def loadFile(filename : PathLike) -> Talks:
+    with open(filename, encoding='utf-8', mode='r') as fp:
+        return kakaotalk.load(fp=fp)
 
-def makefield():
-    
-    pass
+def makeCSV_all_event():
 
-def main():
-    with open(KakaoTalk_TXT, encoding='utf-8', mode='r') as fp:
-        talks = kakaotalk.Talks(fp=fp)
+    talks = loadFile(KakaoTalk_TXT)
 
-    import csv
-
-    with open(csv_temp, newline='', encoding='utf-8', mode='w') as fp:
+    with open(all_event_parsed, newline='', encoding='utf-8', mode='w') as fp:
         writer = csv.writer(fp)
-        writer.writerow(['Type', 'Sender', 'TIME' ,'message'])
-
-        format_FULL= "%Y-%m-%d %H:%M"
-        format_YMD = "%Y-%m-%d"
-        format_HM = "%H:%M"
+        writer.writerow(['Event Name','Message Type', 'Sender', 'TIME' ,'message'])
         
-        for m in talks.messages:
+        for m in filter(lambda x : not isinstance(x, KTMessage), talks.all):
             writer.writerow([
-                m.type,
-                m.sender.name, 
-                m.time.strftime(format_FULL),
+                m.event_name, 
+                m.time,
                 m.message
             ])
 
+def makeCSV_Join_Out_Kick_event():
+
+    talks = loadFile(KakaoTalk_TXT)
+
+    myFilter = lambda x : isinstance(x, (KTRoomJoin, KTRoomOUT, KTRoomKick) )
+
+    with open(Join_Out_Kick_event_parsed, newline='', encoding='utf-8', mode='w') as fp:
+        writer = csv.writer(fp)
+        writer.writerow(['Event Name','Message Type', 'Sender', 'TIME' ,'message'])
+        
+        for m in filter(myFilter, talks.all):
+            writer.writerow([
+                m.event_name, 
+                m.time,
+                m.message,
+                m.name
+            ])
+
+def makeCSV_all_messages():
+
+    talks = loadFile(KakaoTalk_TXT)
+
+    with open(message_pasred, newline='', encoding='utf-8', mode='w') as fp:
+        writer = csv.writer(fp)
+        writer.writerow(['Type', 'Sender', 'Time' ,'Message'])
+        
+        for m in talks.messages:
+            writer.writerow([
+                m.message_type, 
+                m.sender.name,
+                m.time,
+                m.message
+            ])        
+
 if __name__ == "__main__":
-    main()
+    makeCSV_all_event()
+    makeCSV_all_messages()
+    makeCSV_Join_Out_Kick_event()
