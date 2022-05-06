@@ -1,11 +1,13 @@
 from dataclasses import dataclass
+from kakaotalk.base import *
 
 __all__ = [
     "KTRoomMember"
 ]
 
 @dataclass
-class KTRoomMember:
+class KTRoomMember(KTObject):
+
     name : str
 
     def __hash__(self) -> int:
