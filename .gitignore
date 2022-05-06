@@ -1,5 +1,6 @@
-# sample files
+# sample/temporary files
 samples/*.txt
+temp.*
 
 # file outputs
 *.csv

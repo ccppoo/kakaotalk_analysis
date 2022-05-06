@@ -2,13 +2,15 @@ from dataclasses import dataclass
 from typing import List, IO
 from .member import *
 import re
+from kakaotalk.base import *
+
 
 __all__ = [
     "KTChatRoom"
 ]
 
 @dataclass
-class KTChatRoom:
+class KTChatRoom(KTObject):
     room_name : str = None
     saved_at : str = None
     file_name : str = None
