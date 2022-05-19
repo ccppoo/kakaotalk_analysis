@@ -4,7 +4,7 @@ from kakaotalk import *
 import kakaotalk
 import csv
 
-KakaoTalk_TXT = "<Path to kakaotalk txt file>"
+KakaoTalk_TXT = "samples/talk4.txt"
 
 all_event_parsed = "kakaotalk_events.csv"
 Join_Out_Kick_event_parsed = "join_out_kick_events.csv"
